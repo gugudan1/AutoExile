@@ -5,9 +5,36 @@ using GameOffsets;
 using GameOffsets.Native;
 using System.Collections.Concurrent;
 using System.Numerics;
+using System.Runtime.InteropServices;
 
 namespace AutoExile.Systems
 {
+    // GameOffsets.dll의 TileStructure/TgtTileStruct/TgtDetailStruct는 끝에 크기 계산용
+    // 더미 필드(EndMarker, object 타입)를 포함하고 있어 Memory.Read<T>의 unmanaged 제약을
+    // 위반한다. 실제로 읽는 필드만 동일한 순서로 재선언한 로컬 구조체를 대신 사용한다.
+    [StructLayout(LayoutKind.Sequential)]
+    public struct LocalTileStructure
+    {
+        public long SubTileDetailsPtr;
+        public long TgtFilePtr;
+        public StdVector EntitiesList;
+        public short TileHeight;
+        public byte RotationSelector;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct LocalTgtTileStruct
+    {
+        public NativeUtf16Text TgtPath;
+        public long TgtDetailPtr;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct LocalTgtDetailStruct
+    {
+        public NativeUtf16Text name;
+    }
+
     /// <summary>
     /// Reads tile metadata from terrain data to locate named landmarks (boss rooms,
     /// league mechanics, exits, etc.) even beyond render range.
@@ -36,7 +63,7 @@ namespace AutoExile.Systems
                     return false;
 
                 var tiles = new ConcurrentDictionary<string, List<Vector2>>();
-                TileStructure[] tileData = memory.ReadStdVector<TileStructure>(terrain.TgtArray);
+                LocalTileStructure[] tileData = memory.ReadStdVector<LocalTileStructure>(terrain.TgtArray);
 
                 if (tileData == null || tileData.Length == 0)
                     return false;
@@ -51,8 +78,8 @@ namespace AutoExile.Systems
                         {
                             try
                             {
-                                var tgtTileStruct = memory.Read<TgtTileStruct>(tileData[i].TgtFilePtr);
-                                string detailName = memory.Read<TgtDetailStruct>(tgtTileStruct.TgtDetailPtr).name.ToString(memory);
+                                var tgtTileStruct = memory.Read<LocalTgtTileStruct>(tileData[i].TgtFilePtr);
+                                string detailName = memory.Read<LocalTgtDetailStruct>(tgtTileStruct.TgtDetailPtr).name.ToString(memory);
                                 string tilePath = tgtTileStruct.TgtPath.ToString(memory);
 
                                 // Grid position: each tile is 23x23 grid cells
