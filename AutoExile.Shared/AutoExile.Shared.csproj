@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    AutoExile의 공용 엔진 라이브러리입니다.
+    내비게이션/전투/루팅/창고/맵 기기 등 모든 모드 플러그인이 함께 사용하는
+    시스템과 공용 설정(SharedSettings)을 담고 있습니다.
+    각 모드 플러그인(BossMode 등)은 이 DLL을 참조하여 독립적으로 컴파일됩니다.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>AutoExile.Shared</AssemblyName>
+    <RootNamespace>AutoExile</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 각 모드 플러그인 프로젝트에서 ThreatMapSnapshot 등 internal 타입을 사용할 수 있도록 허용합니다. -->
+    <InternalsVisibleTo Include="AutoExile.BossMode" />
+    <InternalsVisibleTo Include="AutoExile.Follower" />
+    <InternalsVisibleTo Include="AutoExile.Blight" />
+    <InternalsVisibleTo Include="AutoExile.Simulacrum" />
+    <InternalsVisibleTo Include="AutoExile.Heist" />
+    <InternalsVisibleTo Include="AutoExile.Labyrinth" />
+    <InternalsVisibleTo Include="AutoExile.WaveFarm" />
+    <InternalsVisibleTo Include="AutoExile.Idle" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="ExileCore">
+      <HintPath>Resources\ExileCore.dll</HintPath>
+    </Reference>
+    <Reference Include="GameOffsets">
+      <HintPath>Resources\GameOffsets.dll</HintPath>
+    </Reference>
+    <Reference Include="ImGui.NET">
+      <HintPath>Resources\ImGui.NET.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpDX">
+      <HintPath>Resources\SharpDX.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpDX.Mathematics">
+      <HintPath>Resources\SharpDX.Mathematics.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>

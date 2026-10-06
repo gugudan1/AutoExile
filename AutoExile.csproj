@@ -13,6 +13,18 @@
     <Compile Remove="USER BRANCH\**" />
     <EmbeddedResource Remove="USER BRANCH\**" />
     <None Remove="USER BRANCH\**" />
+    <!-- 모드별 독립 플러그인 프로젝트(AutoExile.Shared + AutoExile.<Mode>)는
+         별도의 csproj로 빌드되므로, 기존 통합 플러그인이 이 파일들을 중복으로
+         컴파일하지 않도록 제외합니다. -->
+    <Compile Remove="AutoExile.Shared\**" />
+    <Compile Remove="AutoExile.BossMode\**" />
+    <Compile Remove="AutoExile.Follower\**" />
+    <Compile Remove="AutoExile.Blight\**" />
+    <Compile Remove="AutoExile.Simulacrum\**" />
+    <Compile Remove="AutoExile.Heist\**" />
+    <Compile Remove="AutoExile.Labyrinth\**" />
+    <Compile Remove="AutoExile.WaveFarm\**" />
+    <Compile Remove="AutoExile.Idle\**" />
   </ItemGroup>
 
   <ItemGroup>

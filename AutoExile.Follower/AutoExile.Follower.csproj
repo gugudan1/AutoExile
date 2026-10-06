@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    추종(Follower) 전용 모드를 독립적으로 실행하는 ExileCore 플러그인입니다.
+    AutoExile.Shared.dll(공용 엔진)을 참조하며, 이 플러그인 하나만
+    ExileCore Plugins 폴더에 넣으면 파티원 추종 기능만 단독으로 동작합니다.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>AutoExile.Follower</AssemblyName>
+    <RootNamespace>AutoExile.Follower</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="ExileCore">
+      <HintPath>Resources\ExileCore.dll</HintPath>
+    </Reference>
+    <Reference Include="GameOffsets">
+      <HintPath>Resources\GameOffsets.dll</HintPath>
+    </Reference>
+    <Reference Include="ImGui.NET">
+      <HintPath>Resources\ImGui.NET.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpDX">
+      <HintPath>Resources\SharpDX.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpDX.Mathematics">
+      <HintPath>Resources\SharpDX.Mathematics.dll</HintPath>
+    </Reference>
+    <Reference Include="AutoExile.Shared">
+      <HintPath>Resources\AutoExile.Shared.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
