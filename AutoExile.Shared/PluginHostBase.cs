@@ -121,6 +121,12 @@ namespace AutoExile
         public override bool Initialise()
         {
             PluginRuntimeInfo.PluginDirectory = DirectoryFullName;
+
+            // 시작 시점에 공유 설정 파일(Plugins\Compiled\AutoExileSharedSettings.json)에서
+            // 공통 섹션(빌드/루팅/위협/맵 기믹/실행 공통/창고/맵 롤링/지도 장치/파우스투스/알림)을
+            // 즉시 반영합니다 — 다른 플러그인에서 먼저 바꿔둔 값을 그대로 이어받습니다.
+            SharedSettingsSync.LoadIfChanged(Settings, DirectoryFullName);
+
             _ninjaPrice.Initialize(DirectoryFullName, msg => LogMessage($"[{Name}] NinjaPrice: {msg}"));
             _mapDatabase = new MapDatabase(msg => LogMessage($"[{Name}] {msg}"));
             _mapDatabase.Initialize(DirectoryFullName);
@@ -269,6 +275,13 @@ namespace AutoExile
 
         public override Job Tick()
         {
+            // 공통 설정 동기화 — 다른 플러그인이 바꾼 값을 반영하고(Load), 이 플러그인에서
+            // 방금 바꾼 값을 공유 파일에 반영합니다(Save). 둘 다 내부적으로 약 1초 간격으로만
+            // 실제 디스크 I/O를 수행하므로 매 틱 호출해도 안전합니다. 플러그인이 꺼져 있거나
+            // 게임 접속 전이어도 설정 메뉴는 계속 보이므로, Enable/InGame 체크보다 먼저 둡니다.
+            SharedSettingsSync.LoadIfChanged(Settings, DirectoryFullName);
+            SharedSettingsSync.SaveIfChanged(Settings, DirectoryFullName);
+
             if (!Settings.Enable || !GameController.InGame)
                 return base.Tick();
 
