@@ -7,14 +7,14 @@ using System.Numerics;
 namespace AutoExile.Modes.Shared
 {
     /// <summary>
-    /// Static utilities shared across farming modes.
+    /// 파밍 모드 전반에서 공유하는 정적 유틸리티 모음입니다.
     /// </summary>
     public static class ModeHelpers
     {
         /// <summary>
-        /// Find the best targetable TownPortal entity.
-        /// Prefers the portal with lowest grid Y (south on screen / behind map device in isometric view).
-        /// This avoids portals that visually block the map device.
+        /// 가장 적합한(타겟 가능한) 귀환 포탈 엔티티를 찾습니다.
+        /// 그리드 Y값이 가장 낮은(아이소메트릭 화면상 남쪽, 지도 장치를 가리지 않는) 포탈을 우선합니다.
+        /// 지도 장치를 시각적으로 가리는 포탈을 피하기 위함입니다.
         /// </summary>
         public static Entity? FindNearestPortal(GameController gc)
         {
@@ -23,7 +23,7 @@ namespace AutoExile.Modes.Shared
             foreach (var entity in gc.EntityListWrapper.OnlyValidEntities)
             {
                 if (!entity.IsTargetable) continue;
-                // Standard TownPortal entities OR Effect-type MTX portals (e.g. Black Barya's SandHourglass)
+                // 일반 귀환 포탈(TownPortal) 또는 Effect 타입 MTX 포탈(예: Black Barya's SandHourglass)
                 var isTownPortal = entity.Type == EntityType.TownPortal;
                 var isMtxPortal = entity.Path.Contains("Town_Portals", StringComparison.OrdinalIgnoreCase);
                 if (!isTownPortal && !isMtxPortal) continue;
@@ -37,7 +37,7 @@ namespace AutoExile.Modes.Shared
         }
 
         /// <summary>
-        /// WorldToScreen → window offset → BotInput.Click. Updates lastActionTime on success.
+        /// WorldToScreen → 창 오프셋 적용 → BotInput.Click. 성공 시 lastActionTime을 갱신합니다.
         /// </summary>
         public static bool ClickEntity(GameController gc, Entity entity, ref DateTime lastActionTime)
         {
@@ -48,7 +48,7 @@ namespace AutoExile.Modes.Shared
         }
 
         /// <summary>
-        /// BotInput gate + cooldown check.
+        /// BotInput 게이트 + 쿨다운 체크.
         /// </summary>
         public static bool CanAct(DateTime lastActionTime, float cooldownMs)
         {
@@ -57,7 +57,7 @@ namespace AutoExile.Modes.Shared
         }
 
         /// <summary>
-        /// Parse DefaultPositioning setting and enable combat with that profile.
+        /// DefaultPositioning 설정값을 파싱해 해당 프로필로 전투를 활성화합니다.
         /// </summary>
         public static void EnableDefaultCombat(BotContext ctx)
         {
@@ -71,13 +71,13 @@ namespace AutoExile.Modes.Shared
         }
 
         /// <summary>
-        /// Wrapper for StashSystem.HasInventoryItems.
+        /// StashSystem.HasInventoryItems에 대한 래퍼입니다.
         /// </summary>
         public static bool HasInventoryItems(GameController gc) => StashSystem.HasInventoryItems(gc);
 
         /// <summary>
-        /// Cancel MapDevice + Stash + Interaction systems + release held keys.
-        /// Called on area change and mode transitions.
+        /// MapDevice + Stash + Interaction 시스템을 취소하고 눌려있는 키를 모두 해제합니다.
+        /// 지역 변경 및 모드 전환 시 호출됩니다.
         /// </summary>
         public static void CancelAllSystems(BotContext ctx)
         {

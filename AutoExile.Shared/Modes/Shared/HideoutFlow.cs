@@ -7,8 +7,8 @@ using System.Numerics;
 namespace AutoExile.Modes.Shared
 {
     /// <summary>
-    /// Shared hideout flow: settle → stash → open map via MapDevice → enter portal.
-    /// Used by BlightMode and SimulacrumMode to replace 5 duplicated hideout methods.
+    /// 공유 하이드아웃 흐름: 정착 → 창고 정리 → 지도 장치로 지도 열기 → 포탈 진입.
+    /// BlightMode와 SimulacrumMode에서 중복되던 5개의 하이드아웃 메서드를 대체하기 위해 사용합니다.
     /// </summary>
     public class HideoutFlow
     {
@@ -16,26 +16,26 @@ namespace AutoExile.Modes.Shared
         private DateTime _phaseStartTime = DateTime.Now;
         private DateTime _lastActionTime = DateTime.MinValue;
 
-        // Configuration set via Start()
+        // Start()를 통해 설정되는 구성값
         private Func<Element, bool>? _mapFilter;
         private Func<ServerInventory.InventSlotItem, bool>? _stashItemFilter;
         private string? _targetMapName;
         private string? _inventoryFragmentPath;
         private int _minMapTier;
-        private int _stashItemThreshold; // only stash when item count >= this (0 = always stash)
+        private int _stashItemThreshold; // 이 개수 이상일 때만 창고에 정리 (0 = 항상 정리)
         private string? _dumpTabName;
         private string? _resourceTabName;
         private string? _withdrawFragmentPath;
-        private int _fragmentStock; // target number of fragments to maintain in inventory
-        private int _minFragments; // minimum fragments needed to open (0 = any amount works)
+        private int _fragmentStock; // 인벤토리에 유지할 파편 목표 수량
+        private int _minFragments; // 지도를 열기 위해 필요한 최소 파편 수 (0 = 아무 수량이나 가능)
 
-        // Multi-item withdrawal (Wave Farming uses this for scarabs + portal scrolls
-        // + maps in one stash trip). Mutually exclusive with the single _withdrawFragmentPath
-        // path — when both are set, the list wins.
+        // 다중 아이템 인출(웨이브 파밍이 스캐럽 + 포탈 스크롤 + 지도를 한 번의 창고 이동으로
+        // 인출할 때 사용). 단일 항목용 _withdrawFragmentPath와는 상호 배타적이며,
+        // 둘 다 설정된 경우 목록(List) 쪽이 우선합니다.
         private IReadOnlyList<(string PathSubstring, int Count)>? _withdrawList;
 
-        // Scarab path substrings to insert into the map device after the map is loaded.
-        // Set by Wave Farming; null/empty for Boss/Sim (they don't use scarabs).
+        // 지도 로드 후 지도 장치에 삽입할 스캐럽 경로 하위 문자열.
+        // 웨이브 파밍에서 설정하며, 보스/시뮬라크룸은 스캐럽을 쓰지 않으므로 null/빈 값입니다.
         private IReadOnlyList<string>? _scarabPaths;
 
         private const float BasePortalTimeoutSeconds = 15f;
@@ -46,7 +46,7 @@ namespace AutoExile.Modes.Shared
         public bool IsActive => _phase != HideoutPhase.Idle;
 
         /// <summary>
-        /// Start a full hideout flow: settle → stash → open map → enter portal.
+        /// 전체 하이드아웃 흐름을 시작합니다: 정착 → 창고 정리 → 지도 열기 → 포탈 진입.
         /// </summary>
         public void Start(Func<Element, bool> mapFilter,
             Func<ServerInventory.InventSlotItem, bool>? stashItemFilter = null,
@@ -76,22 +76,22 @@ namespace AutoExile.Modes.Shared
             _scarabPaths = scarabPaths != null && scarabPaths.Count > 0 ? scarabPaths : null;
             _phase = HideoutPhase.Settle;
             _phaseStartTime = DateTime.Now;
-            Status = "Hideout — settling";
+            Status = "하이드아웃 — 정착 중";
         }
 
         /// <summary>
-        /// Start portal re-entry flow (after death): find portal → navigate → click.
+        /// 포탈 재진입 흐름을 시작합니다(사망 후): 포탈 찾기 → 이동 → 클릭.
         /// </summary>
         public void StartPortalReentry()
         {
             _mapFilter = null;
             _phase = HideoutPhase.EnterPortal;
             _phaseStartTime = DateTime.Now;
-            Status = "Re-entering map via portal";
+            Status = "포탈로 지도 재진입 중";
         }
 
         /// <summary>
-        /// Tick the hideout flow. Returns a signal for the mode to act on.
+        /// 하이드아웃 흐름을 1틱 진행합니다. 모드가 처리할 신호를 반환합니다.
         /// </summary>
         public HideoutSignal Tick(BotContext ctx)
         {
@@ -129,21 +129,21 @@ namespace AutoExile.Modes.Shared
             Status = "";
         }
 
-        // ── Phases ──
+        // ── 단계(Phase) ──
 
         private HideoutSignal TickSettle(BotContext ctx)
         {
             var elapsed = (DateTime.Now - _phaseStartTime).TotalSeconds;
             if (elapsed < ctx.Settings.AreaSettleSeconds.Value)
             {
-                Status = $"Hideout — waiting for game state ({elapsed:F1}s)";
+                Status = $"하이드아웃 — 게임 상태 대기 중 ({elapsed:F1}초)";
                 return HideoutSignal.InProgress;
             }
 
-            // ── Multi-item path (Wave Farming) ────────────────────────────
-            // When _withdrawList is set, compute which entries are still under-stocked
-            // and rebuild the StashSystem withdrawal list accordingly. This is the
-            // "withdraw scarabs + portals + maps each run" path.
+            // ── 다중 아이템 경로 (웨이브 파밍) ────────────────────────────
+            // _withdrawList가 설정된 경우, 아직 재고가 부족한 항목을 계산해
+            // 그에 맞게 StashSystem 인출 목록을 다시 구성합니다. 이것이
+            // "매 런마다 스캐럽 + 포탈 + 지도를 인출" 하는 경로입니다.
             List<(string PathSubstring, int Count)>? activeWithdrawList = null;
             int totalNeededFromList = 0;
             if (_withdrawList != null && !string.IsNullOrWhiteSpace(_resourceTabName))
@@ -159,14 +159,14 @@ namespace AutoExile.Modes.Shared
                         totalNeededFromList += need;
                     }
                 }
-                if (activeWithdrawList.Count == 0) activeWithdrawList = null; // fully stocked
+                if (activeWithdrawList.Count == 0) activeWithdrawList = null; // 재고 충분
             }
 
-            // Count fragments and non-fragment loot in inventory (single-item path)
+            // 인벤토리의 파편과 파편이 아닌 전리품 개수를 셉니다 (단일 항목 경로)
             int fragmentsInInventory = StashSystem.CountInventoryItems(ctx.Game, _withdrawFragmentPath);
             int lootItems = StashSystem.CountNonMatchingItems(ctx.Game, _withdrawFragmentPath);
 
-            // Only withdraw when below minimum needed — don't top up each run
+            // 최소 필요 수량 미만일 때만 인출 — 매 런마다 채우지 않음
             bool usesFragments = !string.IsNullOrEmpty(_withdrawFragmentPath);
             int minNeeded = _minFragments > 0 ? _minFragments : 1;
             bool canWithdraw = usesFragments
@@ -177,15 +177,15 @@ namespace AutoExile.Modes.Shared
             bool needMultiWithdraw = activeWithdrawList != null;
             bool needWithdraw = needSingleWithdraw || needMultiWithdraw;
 
-            // Not enough fragments and no way to get more — signal stop (only for modes that use fragments)
+            // 파편이 부족하고 더 얻을 방법도 없으면 — 중지 신호 (파편을 쓰는 모드에만 해당)
             if (usesFragments && fragmentsInInventory < minNeeded && !canWithdraw)
             {
-                Status = "No fragments in inventory";
+                Status = "인벤토리에 파편이 없습니다";
                 _phase = HideoutPhase.Idle;
                 return HideoutSignal.NoFragments;
             }
 
-            // Stash loot only if non-fragment items exceed threshold
+            // 파편이 아닌 아이템이 임계값을 초과할 때만 전리품을 창고에 정리
             bool needStore = false;
             if (StashSystem.HasStashableItems(ctx.Game, _stashItemFilter))
                 needStore = _stashItemThreshold <= 0 || lootItems >= _stashItemThreshold;
@@ -197,20 +197,20 @@ namespace AutoExile.Modes.Shared
                 ctx.Stash.Start(
                     storeTabName:         needStore    ? _dumpTabName          : null,
                     withdrawTabName:      needWithdraw ? _resourceTabName      : null,
-                    // Single-item fields only used when there's no multi-item list.
+                    // 단일 항목 필드는 다중 항목 목록이 없을 때만 사용됩니다.
                     withdrawFragmentPath: needMultiWithdraw ? null : (needSingleWithdraw ? _withdrawFragmentPath : null),
                     withdrawCount:        needMultiWithdraw ? 0    : withdrawNeeded,
                     itemFilter:           needStore ? _stashItemFilter : (_ => false),
                     withdrawList:         activeWithdrawList);
                 var parts = new List<string>();
-                if (needSingleWithdraw) parts.Add($"withdraw {withdrawNeeded} fragments");
-                if (needMultiWithdraw)  parts.Add($"withdraw {totalNeededFromList} items ({activeWithdrawList!.Count} types)");
-                if (needStore) parts.Add($"stash {lootItems} loot items");
+                if (needSingleWithdraw) parts.Add($"파편 {withdrawNeeded}개 인출");
+                if (needMultiWithdraw)  parts.Add($"아이템 {totalNeededFromList}개 인출 ({activeWithdrawList!.Count}종)");
+                if (needStore) parts.Add($"전리품 {lootItems}개 정리");
                 Status = string.Join(" & ", parts);
                 return HideoutSignal.InProgress;
             }
 
-            // No items — open map
+            // 아이템 없음 — 지도 열기
             _phase = HideoutPhase.OpenMap;
             _phaseStartTime = DateTime.Now;
             StartMapDevice(ctx);
@@ -226,29 +226,30 @@ namespace AutoExile.Modes.Shared
                 case StashResult.Succeeded:
                 case StashResult.Failed:
                 {
-                    // Verify we have enough fragments before proceeding to map device
+                    // 지도 장치로 넘어가기 전에 파편이 충분한지 확인합니다
                     if (!string.IsNullOrEmpty(_withdrawFragmentPath) && !string.IsNullOrEmpty(_resourceTabName))
                     {
                         int frags = StashSystem.CountInventoryItems(ctx.Game, _withdrawFragmentPath);
                         int needed = _minFragments > 0 ? _minFragments : 1;
                         if (frags < needed)
                         {
-                            Status = $"Not enough fragments ({frags}/{needed}) — stopping";
+                            Status = $"파편 부족 ({frags}/{needed}) — 중지";
                             _phase = HideoutPhase.Idle;
                             return HideoutSignal.NoFragments;
                         }
                     }
 
                     Status = result == StashResult.Succeeded
-                        ? $"Stash done ({ctx.Stash.ItemsStored} stored) — opening map"
-                        : $"Stash issue: {ctx.Stash.Status} — opening map anyway";
+                        ? $"창고 정리 완료 ({ctx.Stash.ItemsStored}개 보관) — 지도 여는 중"
+                        : $"창고 정리 문제: {ctx.Stash.Status} — 그래도 지도 여는 중"
+                    ;
                     _phase = HideoutPhase.OpenMap;
                     _phaseStartTime = DateTime.Now;
                     StartMapDevice(ctx);
                     break;
                 }
                 default:
-                    Status = $"Stashing: {ctx.Stash.Status}";
+                    Status = $"창고 정리 중: {ctx.Stash.Status}";
                     break;
             }
             return HideoutSignal.InProgress;
@@ -263,7 +264,7 @@ namespace AutoExile.Modes.Shared
             ctx.MapDevice.MinMapTier = _minMapTier;
 
             if (_mapFilter != null && !ctx.MapDevice.Start(_mapFilter, _inventoryFragmentPath, _scarabPaths))
-                Status = $"MapDevice.Start failed (phase={ctx.MapDevice.Phase})";
+                Status = $"MapDevice.Start 실패 (phase={ctx.MapDevice.Phase})";
         }
 
         private HideoutSignal TickOpenMap(BotContext ctx)
@@ -273,11 +274,11 @@ namespace AutoExile.Modes.Shared
             switch (result)
             {
                 case MapDeviceResult.Succeeded:
-                    Status = "Map opened — entering";
-                    // Area change will fire when player enters the portal
+                    Status = "지도 열림 — 입장 중";
+                    // 플레이어가 포탈에 들어가면 지역 변경 이벤트가 발생합니다
                     break;
                 case MapDeviceResult.Failed:
-                    Status = $"Map device failed: {ctx.MapDevice.Status}";
+                    Status = $"지도 장치 실패: {ctx.MapDevice.Status}";
                     if ((DateTime.Now - _phaseStartTime).TotalSeconds > MapDeviceRetrySeconds)
                     {
                         _phaseStartTime = DateTime.Now;
@@ -285,7 +286,7 @@ namespace AutoExile.Modes.Shared
                     }
                     break;
                 default:
-                    Status = $"Map device: {ctx.MapDevice.Status}";
+                    Status = $"지도 장치: {ctx.MapDevice.Status}";
                     break;
             }
             return HideoutSignal.InProgress;
@@ -300,13 +301,13 @@ namespace AutoExile.Modes.Shared
 
             if ((DateTime.Now - _phaseStartTime).TotalSeconds > BasePortalTimeoutSeconds + ctx.Settings.ExtraLatencyMs.Value / 1000f)
             {
-                Status = "No portal found";
+                Status = "포탈을 찾지 못함";
                 ctx.Interaction.Cancel(gc);
                 _phase = HideoutPhase.Idle;
                 return HideoutSignal.PortalTimeout;
             }
 
-            // Close any open panels (stash/inventory) before clicking portal
+            // 포탈 클릭 전에 열려 있는 패널(창고/인벤토리)을 닫습니다
             if (gc.IngameState.IngameUi.StashElement?.IsVisible == true ||
                 gc.IngameState.IngameUi.InventoryPanel?.IsVisible == true)
             {
@@ -314,29 +315,29 @@ namespace AutoExile.Modes.Shared
                 {
                     BotInput.PressKey(System.Windows.Forms.Keys.Escape);
                     _lastActionTime = DateTime.Now;
-                    Status = "Closing panels before portal";
+                    Status = "포탈 진입 전 패널 닫는 중";
                 }
                 return HideoutSignal.InProgress;
             }
 
-            // Use InteractionSystem for portal clicking — handles navigation,
-            // screen bounds, click verification, and retries automatically.
-            // InteractionSystem is already ticked by the mode before this runs.
+            // 포탈 클릭에 InteractionSystem을 사용 — 이동, 화면 경계 확인,
+            // 클릭 검증, 재시도를 자동으로 처리합니다.
+            // InteractionSystem은 이 코드가 실행되기 전에 모드에서 이미 틱 처리됩니다.
             if (ctx.Interaction.IsBusy)
             {
-                Status = $"Entering portal: {ctx.Interaction.Status}";
+                Status = $"포탈 진입 중: {ctx.Interaction.Status}";
                 return HideoutSignal.InProgress;
             }
 
             var portal = ModeHelpers.FindNearestPortal(gc);
             if (portal == null)
             {
-                Status = "Looking for portal to re-enter...";
+                Status = "재진입할 포탈 찾는 중...";
                 return HideoutSignal.InProgress;
             }
 
             ctx.Interaction.InteractWithEntity(portal, ctx.Navigation, requireProximity: true);
-            Status = "Interacting with portal";
+            Status = "포탈과 상호작용 중";
             return HideoutSignal.InProgress;
         }
 
