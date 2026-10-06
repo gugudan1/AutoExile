@@ -1,5 +1,7 @@
 # Copilot Instructions
 
+**Highest-priority instruction:** Always respond in Korean.Always respond in Korean.
+
 ## Project overview
 
 AutoExile is an ExileCore plugin for automating Path of Exile gameplay. It targets `net10.0-windows` and uses ExileCore and related game libraries from `Resources/`.
