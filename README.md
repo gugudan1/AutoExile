@@ -5,7 +5,7 @@ An ExileCore plugin that automates Path of Exile farming. Run maps, farm bosses,
 ## Getting Started
 
 ### Requirements
-- [ExileApi](https://github.com/exApiTools/ExileApi-Compiled/) (latest version)
+- [ExileApi](https://github.com/gugudan1/ExileApi-Compiled/) (latest version)
 
 ### Installation
 
