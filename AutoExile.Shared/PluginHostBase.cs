@@ -49,6 +49,7 @@ namespace AutoExile
         private GemValuationService _gemValuation = new();
         private MapDatabase _mapDatabase = null!;
         private readonly PerformanceTracker _perf = new();
+        private bool _mapListPopulated;
 
         // Gem level-up
         private DateTime _lastGemLevelAt = DateTime.MinValue;
@@ -113,6 +114,11 @@ namespace AutoExile
 
         /// <summary>Initialise() 마지막에 호출되는 훅 — 모드별 드롭다운 채우기 등에 사용.</summary>
         protected virtual void OnInitialisedHook() { }
+
+        /// <summary>아틀라스 맵 목록이 (최초 1회) 준비되었을 때 호출되는 훅 — 맵 선택
+        /// 드롭다운(예: WaveFarm의 MapName)을 채워야 하는 모드를 위함. 이름 앞에
+        /// 보스 타일 데이터가 있는 맵은 "★ " 접두사가 붙어 있습니다.</summary>
+        protected virtual void OnMapListReady(List<string> mapNames) { }
 
         /// <summary>매 틱, Mode.Tick(Ctx) 호출 직전에 실행되는 훅 — 설정 값을
         /// 모드 인스턴스의 공개 속성으로 동기화해야 하는 모드(Follower 등)를 위함.</summary>
@@ -298,6 +304,10 @@ namespace AutoExile
 
             Ctx.DeltaTime = (float)GameController.DeltaTime;
             Ctx.MinimapIcons = _knownMinimapIcons;
+
+            // 아틀라스 데이터가 준비되면(최초 1회) 맵 이름 목록을 채웁니다
+            if (!_mapListPopulated)
+                PopulateMapList();
 
             SyncStashTabNames();
 
@@ -767,6 +777,38 @@ namespace AutoExile
                 Settings.Stash.MappingSuppliesTabName.Value = savedSupplies;
             }
             catch { /* stash API can throw during zone transitions */ }
+        }
+
+        private void PopulateMapList()
+        {
+            try
+            {
+                var nodes = GameController.Files?.AtlasNodes?.EntriesList;
+                if (nodes == null || nodes.Count == 0) return;
+
+                // 일반 아틀라스 노드(0~109)만 사용해 맵 이름 목록을 만듭니다.
+                // 보스 타일 데이터가 있는(지원되는) 맵은 "★ " 접두사를 붙입니다.
+                var mapNames = new List<string>();
+                var limit = Math.Min(nodes.Count, 110);
+                for (int i = 0; i < limit; i++)
+                {
+                    var name = nodes[i].Area?.Name;
+                    if (string.IsNullOrEmpty(name)) continue;
+                    var prefix = _mapDatabase.IsSupported(name) ? "\u2605 " : "";
+                    mapNames.Add($"{prefix}{name}");
+                }
+                mapNames.Sort((a, b) =>
+                    a.TrimStart('\u2605', ' ').CompareTo(b.TrimStart('\u2605', ' ')));
+
+                OnMapListReady(mapNames);
+
+                _mapListPopulated = true;
+                LogMessage($"[{Name}] 맵 목록 채움: {mapNames.Count}개 ({_mapDatabase.SupportedMaps.Count()}개 지원)");
+            }
+            catch (Exception ex)
+            {
+                LogMessage($"[{Name}] 맵 목록 채우기 실패: {ex.Message}");
+            }
         }
 
         private void TickGemLevelUp()
