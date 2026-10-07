@@ -28,9 +28,14 @@ namespace AutoExile.BossMode
             // 보스 종류 드롭다운 채우기 — SetListValues 호출 시 값이 초기화되므로 저장 후 복원
             var bossSettings = ((BossPluginSettings)Settings).Boss;
             var saved = bossSettings.BossType.Value;
-            bossSettings.BossType.SetListValues(_bossMode!.EncounterNames.ToList());
-            if (!string.IsNullOrEmpty(saved) && _bossMode.EncounterNames.Contains(saved))
+            var names = _bossMode!.EncounterNames.ToList();
+            bossSettings.BossType.SetListValues(names);
+            if (!string.IsNullOrEmpty(saved) && names.Contains(saved))
                 bossSettings.BossType.Value = saved;
+            else if (names.Count > 0)
+                // 저장된 값이 없으면(최초 실행 등) Value가 null로 남아 F12 설정창에서
+                // ImGui.BeginCombo(..., null) 호출 시 네이티브 크래시가 발생하므로 기본값을 채워준다.
+                bossSettings.BossType.Value = names[0];
         }
 
         protected override void OnPlayerDeath()
