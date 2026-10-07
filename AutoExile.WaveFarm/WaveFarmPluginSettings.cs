@@ -13,7 +13,7 @@ namespace AutoExile.WaveFarm
         [Menu("파밍 설정", "WaveFarm(파밍) 모드 전용 설정입니다.")]
         public FarmingSettings Farming { get; set; } = new FarmingSettings();
 
-        [Submenu(CollapsedByDefault = true)]
+        [Submenu(CollapsedByDefault = false)]
         public class FarmingSettings
         {
             public FarmingSettings()

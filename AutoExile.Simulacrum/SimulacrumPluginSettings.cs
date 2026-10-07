@@ -12,7 +12,7 @@ namespace AutoExile.Simulacrum
         [Menu("허상 파밍 설정", "Simulacrum(허상) 파밍 모드 전용 설정입니다.")]
         public SimulacrumSettings Simulacrum { get; set; } = new SimulacrumSettings();
 
-        [Submenu(CollapsedByDefault = true)]
+        [Submenu(CollapsedByDefault = false)]
         public class SimulacrumSettings
         {
             [Menu("최소 웨이브 지연 (초)", "웨이브 종료 후 다음 웨이브 시작까지 최소 대기 시간입니다.")]

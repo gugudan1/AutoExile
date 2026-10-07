@@ -12,7 +12,7 @@ namespace AutoExile.Follower
         [Menu("추종 설정", "파티원 추종 모드 전용 설정입니다.")]
         public FollowerSettings Follower { get; set; } = new FollowerSettings();
 
-        [Submenu(CollapsedByDefault = true)]
+        [Submenu(CollapsedByDefault = false)]
         public class FollowerSettings
         {
             [Menu("리더 이름", "추종할 캐릭터 이름입니다.")]

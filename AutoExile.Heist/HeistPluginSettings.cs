@@ -13,7 +13,7 @@ namespace AutoExile.Heist
         [Menu("강탈 설정", "Heist(강탈) 모드 전용 설정입니다.")]
         public HeistSettings Heist { get; set; } = new HeistSettings();
 
-        [Submenu(CollapsedByDefault = true)]
+        [Submenu(CollapsedByDefault = false)]
         public class HeistSettings
         {
             [Menu("동료 상호작용 키", "문/상자 근처에서 동료 상호작용을 위해 누를 키입니다 (기본값 V).")]

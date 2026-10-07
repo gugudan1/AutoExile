@@ -13,7 +13,7 @@ namespace AutoExile.Blight
         [Menu("역병 농사 설정", "Blight(역병) 농사 모드 전용 설정입니다.")]
         public BlightSettings Blight { get; set; } = new BlightSettings();
 
-        [Submenu(CollapsedByDefault = true)]
+        [Submenu(CollapsedByDefault = false)]
         public class BlightSettings
         {
             [Menu("재화 확인 무시", "타워 건설/업그레이드 시 재화 확인을 건너뜁니다 (디버그용: 재화 UI를 읽지 못할 때 사용).")]

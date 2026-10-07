@@ -12,7 +12,7 @@ namespace AutoExile.BossMode
         [Menu("보스 파밍 설정", "보스 파밍 모드 전용 설정입니다.")]
         public BossSettings Boss { get; set; } = new BossSettings();
 
-        [Submenu(CollapsedByDefault = true)]
+        [Submenu(CollapsedByDefault = false)]
         public class BossSettings
         {
             [Menu("보스 종류", "파밍할 보스 조우를 선택합니다.")]

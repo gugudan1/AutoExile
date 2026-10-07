@@ -13,7 +13,7 @@ namespace AutoExile.Labyrinth
         [Menu("미궁 설정", "Labyrinth(미궁) 모드 전용 설정입니다.")]
         public LabyrinthSettings Labyrinth { get; set; } = new LabyrinthSettings();
 
-        [Submenu(CollapsedByDefault = true)]
+        [Submenu(CollapsedByDefault = false)]
         public class LabyrinthSettings
         {
             [Menu("난이도", "진행할 미궁 난이도입니다. 게임 내 UI 텍스트와 정확히 일치해야 하므로 영문 그대로 유지합니다.")]
