@@ -134,34 +134,66 @@ namespace AutoExile
         // 리플렉션 기반 직렬화/역직렬화 (ExileCore 노드 타입 전용)
         // ================================================================
 
-        private static object? SerializeObject(object obj)
+        /// <summary>
+        /// 리플렉션 재귀 중 배열/컬렉션의 "SyncRoot"(배열이 자기 자신을 반환) 같은 자기
+        /// 참조 속성, 또는 메서드/이벤트 백킹 객체가 부모를 다시 가리키는 경우를 만나면
+        /// 무한 재귀(StackOverflowException, 캐치 불가능한 치명적 크래시)로 이어집니다.
+        /// 방문 중인 객체를 참조 동일성(reference equality)으로 추적해 재방문 시
+        /// 건너뛰어 방지합니다.
+        /// </summary>
+        private static object? SerializeObject(object obj, HashSet<object>? visiting = null)
         {
             if (TryGetNodeValue(obj, out var nodeValue)) return nodeValue;
 
-            var dict = new Dictionary<string, object?>();
-            foreach (var prop in obj.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            // 배열/컬렉션 타입은 공통 설정 노드가 될 수 없으므로(또한 Array.SyncRoot 같은
+            // 자기 참조 속성을 갖고 있어 무한 재귀를 유발하므로) 애초에 재귀하지 않는다.
+            if (obj is System.Collections.IEnumerable && obj is not string) return null;
+
+            visiting ??= new HashSet<object>(ReferenceEqualityComparer.Instance);
+            if (!visiting.Add(obj)) return null; // 이미 처리 중인 객체 — 순환 참조, 건너뛴다.
+
+            try
             {
-                if (!prop.CanRead || prop.GetIndexParameters().Length > 0) continue;
-                object? value;
-                try { value = prop.GetValue(obj); } catch { continue; }
-                if (value == null) continue;
-                dict[prop.Name] = SerializeObject(value);
+                var dict = new Dictionary<string, object?>();
+                foreach (var prop in obj.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
+                {
+                    if (!prop.CanRead || prop.GetIndexParameters().Length > 0) continue;
+                    object? value;
+                    try { value = prop.GetValue(obj); } catch { continue; }
+                    if (value == null) continue;
+                    dict[prop.Name] = SerializeObject(value, visiting);
+                }
+                return dict;
             }
-            return dict;
+            finally
+            {
+                visiting.Remove(obj);
+            }
         }
 
-        private static void ApplyJsonToObject(JsonElement json, object target)
+        private static void ApplyJsonToObject(JsonElement json, object target, HashSet<object>? visiting = null)
         {
             if (TrySetNodeValue(target, json)) return;
             if (json.ValueKind != JsonValueKind.Object) return;
+            if (target is System.Collections.IEnumerable && target is not string) return;
 
-            foreach (var prop in target.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            visiting ??= new HashSet<object>(ReferenceEqualityComparer.Instance);
+            if (!visiting.Add(target)) return;
+
+            try
             {
-                if (!json.TryGetProperty(prop.Name, out var childJson)) continue;
-                object? childTarget;
-                try { childTarget = prop.GetValue(target); } catch { continue; }
-                if (childTarget == null) continue;
-                ApplyJsonToObject(childJson, childTarget);
+                foreach (var prop in target.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
+                {
+                    if (!json.TryGetProperty(prop.Name, out var childJson)) continue;
+                    object? childTarget;
+                    try { childTarget = prop.GetValue(target); } catch { continue; }
+                    if (childTarget == null) continue;
+                    ApplyJsonToObject(childJson, childTarget, visiting);
+                }
+            }
+            finally
+            {
+                visiting.Remove(target);
             }
         }
 
